@@ -28,7 +28,10 @@ async def download_media(url: str, media_type: str = "video", format_id: Optiona
         'outtmpl': out_tmpl,
         'quiet': True,
         'no_warnings': True,
-        'socket_timeout': 30,
+        'socket_timeout': 15,
+        'concurrent_fragment_downloads': 8,
+        'buffersize': 1048576,
+        'http_chunk_size': 10485760,
         'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     }
 
@@ -38,16 +41,25 @@ async def download_media(url: str, media_type: str = "video", format_id: Optiona
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'mp3',
-                'preferredquality': '320',
+                'preferredquality': '192',
             }],
+            'postprocessor_args': [
+                '-threads', '4',
+                '-preset', 'ultrafast',
+            ],
         })
     else:
         if format_id and format_id != "auto":
-            # If video format without audio is selected, merge with best audio
+            # If video format without audio is selected, merge with best audio without re-encoding
             ydl_opts['format'] = f"{format_id}+bestaudio/best"
         else:
             ydl_opts['format'] = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'
         ydl_opts['merge_output_format'] = 'mp4'
+        ydl_opts['postprocessor_args'] = [
+            '-c:v', 'copy',
+            '-c:a', 'copy',
+            '-threads', '4',
+        ]
 
     def _sync_download():
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:

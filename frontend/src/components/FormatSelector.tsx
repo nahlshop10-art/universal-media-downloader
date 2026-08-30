@@ -171,8 +171,8 @@ export default function FormatSelector({ formats, onDownload, isDownloading }: F
           disabled={isDownloading}
           className="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Download className="w-5 h-5" />
-          <span>{isDownloading ? 'Processing & Downloading...' : `Download ${activeTab === 'video' ? 'Video (MP4)' : 'Audio (MP3)'}`}</span>
+          <Download className={`w-5 h-5 ${isDownloading ? 'animate-bounce' : ''}`} />
+          <span>{isDownloading ? '⚡ Initializing Download in Browser...' : `Download ${activeTab === 'video' ? 'Video (MP4)' : 'Audio (MP3)'}`}</span>
         </button>
       </div>
     </div>
