@@ -1,6 +1,6 @@
 import pytest
 from httpx import AsyncClient, ASGITransport
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
 from app.main import app
 
 @pytest.mark.asyncio
@@ -37,3 +37,9 @@ async def test_info_endpoint_invalid_url():
         data = response.json()
         assert "detail" in data
         assert "error" in data["detail"]
+
+@pytest.mark.asyncio
+async def test_download_get_endpoint_missing_url():
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        response = await ac.get("/api/download?url=")
+    assert response.status_code == 400

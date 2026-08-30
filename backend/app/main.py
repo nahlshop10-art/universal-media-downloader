@@ -48,6 +48,43 @@ async def get_media_info(req: InfoRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail={"error": f"Failed to extract info: {str(e)}"})
 
+@app.get("/api/download")
+async def download_endpoint_get(
+    url: str,
+    type: str = "video",
+    format_id: Optional[str] = None,
+    ext: Optional[str] = "mp4",
+    background_tasks: BackgroundTasks = BackgroundTasks()
+):
+    if not url or not url.strip():
+        raise HTTPException(status_code=400, detail={"error": "URL parameter is required."})
+
+    try:
+        result = await download_media(
+            url=url.strip(),
+            media_type=type,
+            format_id=format_id
+        )
+        filepath = result["filepath"]
+        filename = result["filename"]
+
+        background_tasks.add_task(cleanup_file, filepath)
+        media_type_header = "audio/mpeg" if type == "audio" else "video/mp4"
+
+        return FileResponse(
+            path=filepath,
+            filename=filename,
+            media_type=media_type_header,
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"',
+                "Access-Control-Expose-Headers": "Content-Disposition"
+            }
+        )
+    except DownloaderError as e:
+        raise HTTPException(status_code=400, detail={"error": str(e)})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail={"error": f"Download failed: {str(e)}"})
+
 @app.post("/api/download")
 async def download_endpoint(req: DownloadRequest, background_tasks: BackgroundTasks):
     if not req.url or not req.url.strip():

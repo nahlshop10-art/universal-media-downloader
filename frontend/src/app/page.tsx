@@ -48,45 +48,25 @@ export default function Home() {
     }
   };
 
-  const handleDownload = async (type: 'video' | 'audio', formatId: string, ext: string) => {
+  const handleDownload = (type: 'video' | 'audio', formatId: string, ext: string) => {
     if (!mediaInfo) return;
-    setIsDownloading(true);
     setErrorMsg(null);
-    setDownloadProgress('Preparing media file with yt-dlp & ffmpeg...');
+    setDownloadProgress('Starting direct download in your browser download manager...');
 
-    try {
-      const response = await axios.post(
-        `${API_BASE_URL}/api/download`,
-        {
-          url: mediaInfo.webpage_url,
-          type,
-          format_id: formatId,
-          ext,
-        },
-        {
-          responseType: 'blob',
-        }
-      );
+    const downloadUrl = `${API_BASE_URL}/api/download?url=${encodeURIComponent(mediaInfo.webpage_url)}&type=${type}&format_id=${encodeURIComponent(formatId)}&ext=${ext}`;
 
-      // Create download trigger in browser
-      const blob = new Blob([response.data]);
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      const sanitizedTitle = (mediaInfo.title || 'media').replace(/[/\\?%*:|"<>]/g, '-').slice(0, 50);
-      link.setAttribute('download', `${sanitizedTitle}.${ext}`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(downloadUrl);
+    // Trigger native browser download manager
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.setAttribute('target', '_blank');
+    link.setAttribute('download', '');
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
 
-      setDownloadProgress('Download complete! File saved to your device.');
-    } catch (err: any) {
-      setErrorMsg('Failed to download media. Please try another quality or link.');
-      setDownloadProgress(null);
-    } finally {
-      setIsDownloading(false);
-    }
+    setTimeout(() => {
+      setDownloadProgress('Download sent to your device download manager! Check your notifications or downloads bar.');
+    }, 1500);
   };
 
   const platforms = [

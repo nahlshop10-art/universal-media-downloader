@@ -74,9 +74,7 @@ def extract_media_info(url: str) -> Dict[str, Any]:
         # Video stream
         if vcodec != 'none' and height and height >= 144:
             res_label = f"{height}p"
-            # Deduplicate by resolution to keep clean choices (prefer mp4)
-            key = (res_label, ext == 'mp4')
-            if res_label not in seen_resolutions or ext == 'mp4':
+            if res_label not in seen_resolutions:
                 seen_resolutions.add(res_label)
                 video_formats.append({
                     "format_id": format_id,
