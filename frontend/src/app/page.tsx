@@ -58,14 +58,14 @@ export default function Home() {
     // Trigger native browser download manager
     const link = document.createElement('a');
     link.href = downloadUrl;
-    link.setAttribute('target', '_blank');
-    link.setAttribute('download', '');
+    const sanitizedTitle = (mediaInfo.title || 'media').replace(/[/\\?%*:|"<>]/g, '-').slice(0, 50);
+    link.setAttribute('download', `${sanitizedTitle}.${ext}`);
     document.body.appendChild(link);
     link.click();
     link.remove();
 
     setTimeout(() => {
-      setDownloadProgress('Download sent to your device download manager! Check your notifications or downloads bar.');
+      setDownloadProgress('Download started! Check your phone’s notification bar or Chrome Downloads.');
     }, 1500);
   };
 

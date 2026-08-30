@@ -49,6 +49,7 @@ async def get_media_info(req: InfoRequest):
         raise HTTPException(status_code=400, detail={"error": f"Failed to extract info: {str(e)}"})
 
 @app.get("/api/download")
+@app.head("/api/download")
 async def download_endpoint_get(
     url: str,
     type: str = "video",
