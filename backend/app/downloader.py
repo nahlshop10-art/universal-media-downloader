@@ -32,6 +32,9 @@ async def download_media(url: str, media_type: str = "video", format_id: Optiona
         'concurrent_fragment_downloads': 8,
         'buffersize': 1048576,
         'http_chunk_size': 10485760,
+        'extractor_args': {
+            'youtube': {'player_client': ['android', 'web']}
+        },
         'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     }
 

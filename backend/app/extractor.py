@@ -1,10 +1,30 @@
 import re
+import time
 import yt_dlp
 from typing import Dict, Any, List, Optional
 
 class ExtractorError(Exception):
     """Exception raised when media extraction fails."""
     pass
+
+_INFO_CACHE: Dict[str, Dict[str, Any]] = {}
+CACHE_TTL = 300  # 5 minutes cache
+
+def get_cached_raw_info(url: str) -> Optional[Dict[str, Any]]:
+    """Retrieve raw yt-dlp info from cache if valid."""
+    entry = _INFO_CACHE.get(url)
+    if entry and (time.time() - entry["timestamp"] < CACHE_TTL):
+        return entry["info"]
+    return None
+
+def set_cached_raw_info(url: str, info: Dict[str, Any]):
+    """Cache raw yt-dlp info dictionary."""
+    if len(_INFO_CACHE) > 100:
+        _INFO_CACHE.clear()
+    _INFO_CACHE[url] = {
+        "info": info,
+        "timestamp": time.time()
+    }
 
 def detect_platform(url: str) -> str:
     """Identify the source platform from the URL."""
@@ -39,22 +59,30 @@ def format_filesize(size_bytes: Optional[int]) -> str:
 
 def extract_media_info(url: str) -> Dict[str, Any]:
     """Extract metadata and available video/audio formats using yt-dlp."""
-    ydl_opts = {
-        'quiet': True,
-        'no_warnings': True,
-        'extract_flat': False,
-        'skip_download': True,
-        'socket_timeout': 15,
-        'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    }
+    cached_info = get_cached_raw_info(url)
+    if cached_info:
+        info = cached_info
+    else:
+        ydl_opts = {
+            'quiet': True,
+            'no_warnings': True,
+            'extract_flat': False,
+            'skip_download': True,
+            'socket_timeout': 15,
+            'extractor_args': {
+                'youtube': {'player_client': ['android', 'web']}
+            },
+            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        }
 
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=False)
-            if not info:
-                raise ExtractorError("Could not retrieve media info.")
-    except Exception as e:
-        raise ExtractorError(f"Extraction failed: {str(e)}")
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=False)
+                if not info:
+                    raise ExtractorError("Could not retrieve media info.")
+                set_cached_raw_info(url, info)
+        except Exception as e:
+            raise ExtractorError(f"Extraction failed: {str(e)}")
 
     platform = detect_platform(url)
     raw_formats = info.get('formats', [])

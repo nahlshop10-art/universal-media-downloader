@@ -51,11 +51,12 @@ export default function Home() {
   const handleDownload = (type: 'video' | 'audio', formatId: string, ext: string) => {
     if (!mediaInfo) return;
     setErrorMsg(null);
-    setDownloadProgress('Starting direct download in your browser download manager...');
+    setIsDownloading(true);
+    setDownloadProgress('⚡ Preparing ultra-fast media stream... Your browser download prompt is opening.');
 
     const downloadUrl = `${API_BASE_URL}/api/download?url=${encodeURIComponent(mediaInfo.webpage_url)}&type=${type}&format_id=${encodeURIComponent(formatId)}&ext=${ext}`;
 
-    // Trigger native browser download manager
+    // Direct browser navigation for seamless download trigger
     const link = document.createElement('a');
     link.href = downloadUrl;
     const sanitizedTitle = (mediaInfo.title || 'media').replace(/[/\\?%*:|"<>]/g, '-').slice(0, 50);
@@ -65,8 +66,9 @@ export default function Home() {
     link.remove();
 
     setTimeout(() => {
-      setDownloadProgress('Download started! Check your phone’s notification bar or Chrome Downloads.');
-    }, 1500);
+      setIsDownloading(false);
+      setDownloadProgress('🚀 Stream sent! Tap "Download" on your browser prompt if requested.');
+    }, 4000);
   };
 
   const platforms = [
