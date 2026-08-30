@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: universal-media-downloader-api
+    env: python
+    region: oregon
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
