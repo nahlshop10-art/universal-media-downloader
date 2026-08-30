@@ -50,10 +50,13 @@ export default function UrlInput({ onSearch, isLoading }: UrlInputProps) {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (url.trim() && !isLoading) {
-      onSearch(url.trim());
+    const formData = new FormData(e.currentTarget);
+    const inputVal = (formData.get('url_input') as string) || url;
+    const finalUrl = (inputVal || '').trim();
+    if (finalUrl && !isLoading) {
+      onSearch(finalUrl);
     }
   };
 
@@ -67,6 +70,7 @@ export default function UrlInput({ onSearch, isLoading }: UrlInputProps) {
 
           <input
             type="text"
+            name="url_input"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="Paste YouTube, Instagram, Facebook, Twitter, TikTok video or audio link..."
@@ -88,7 +92,7 @@ export default function UrlInput({ onSearch, isLoading }: UrlInputProps) {
 
             <button
               type="submit"
-              disabled={isLoading || !url.trim()}
+              disabled={isLoading}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-sm font-semibold shadow-md shadow-indigo-600/30 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (

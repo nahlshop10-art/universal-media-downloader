@@ -3,7 +3,8 @@ import os
 import tempfile
 from httpx import AsyncClient, ASGITransport
 from unittest.mock import patch, AsyncMock
-from app.main import app, get_safe_content_disposition
+from app.main import app
+from app.streamer import get_content_disposition
 
 @pytest.mark.asyncio
 async def test_health_endpoint():
@@ -33,7 +34,7 @@ async def test_info_endpoint_success():
 def test_safe_content_disposition():
     unicode_title = "Song Title ｜ Official Video 🎵 日本語 العربية"
     filename = "Song_Title_Official_Video.mp4"
-    header = get_safe_content_disposition(filename, unicode_title)
+    header = get_content_disposition(filename, unicode_title)
     
     # Must be encodeable in latin-1 without exception
     header.encode('latin-1')
@@ -41,24 +42,14 @@ def test_safe_content_disposition():
     assert "filename*=" in header
 
 @pytest.mark.asyncio
-async def test_download_get_with_unicode_title():
-    # Create temporary file
-    with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp:
-        tmp.write(b"dummy video content")
-        tmp_path = tmp.name
+async def test_download_streaming_response():
+    async def dummy_gen():
+        yield b"chunk_one"
+        yield b"_chunk_two"
 
-    mock_result = {
-        "filepath": tmp_path,
-        "filename": "Song_Title.mp4",
-        "title": "Song Title ｜ Official Video \uff5c 🎵"
-    }
-
-    with patch("app.main.download_media", return_value=mock_result):
+    with patch("app.main.get_fast_media_stream", return_value=(dummy_gen(), "song.mp3", "audio/mpeg", 19)):
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-            response = await ac.get("/api/download?url=https://youtube.com/watch?v=test&type=video")
+            response = await ac.get("/api/download?url=https://youtube.com/watch?v=test&type=audio")
         assert response.status_code == 200
         assert "Content-Disposition" in response.headers
-        # Check header latin-1 encodability
-        cd = response.headers["Content-Disposition"]
-        cd.encode("latin-1")
-        assert response.content == b"dummy video content"
+        assert response.content == b"chunk_one_chunk_two"

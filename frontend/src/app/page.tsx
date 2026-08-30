@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Navbar from '@/components/Navbar';
 import UrlInput from '@/components/UrlInput';
@@ -30,6 +30,16 @@ export default function Home() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const queryUrl = params.get('url_input') || params.get('url');
+      if (queryUrl) {
+        handleFetch(queryUrl);
+      }
+    }
+  }, []);
 
   const handleFetch = async (url: string) => {
     setIsLoading(true);
