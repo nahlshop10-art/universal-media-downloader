@@ -1,4 +1,6 @@
 import os
+import urllib.parse
+import re
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
@@ -22,6 +24,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+def get_safe_content_disposition(filename: str, title: Optional[str] = None) -> str:
+    """Generate RFC 6266 compliant Content-Disposition header with ASCII fallback."""
+    # ASCII fallback filename (strictly latin-1 / ASCII safe)
+    ascii_name = re.sub(r'[^\x20-\x7E]', '_', filename)
+    ascii_name = re.sub(r'["\\]', '_', ascii_name)
+    
+    # UTF-8 encoded filename
+    utf8_target = title if title else filename
+    ext = os.path.splitext(filename)[1]
+    if not utf8_target.endswith(ext):
+        utf8_target = f"{utf8_target}{ext}"
+    encoded_name = urllib.parse.quote(utf8_target)
+    
+    return f'attachment; filename="{ascii_name}"; filename*=UTF-8\'\'{encoded_name}'
 
 class InfoRequest(BaseModel):
     url: str
@@ -68,16 +85,19 @@ async def download_endpoint_get(
         )
         filepath = result["filepath"]
         filename = result["filename"]
+        title = result.get("title")
 
         background_tasks.add_task(cleanup_file, filepath)
         media_type_header = "audio/mpeg" if type == "audio" else "video/mp4"
+
+        cd_header = get_safe_content_disposition(filename, title)
 
         return FileResponse(
             path=filepath,
             filename=filename,
             media_type=media_type_header,
             headers={
-                "Content-Disposition": f'attachment; filename="{filename}"',
+                "Content-Disposition": cd_header,
                 "Access-Control-Expose-Headers": "Content-Disposition"
             }
         )
@@ -99,17 +119,19 @@ async def download_endpoint(req: DownloadRequest, background_tasks: BackgroundTa
         )
         filepath = result["filepath"]
         filename = result["filename"]
+        title = result.get("title")
 
         background_tasks.add_task(cleanup_file, filepath)
 
         media_type_header = "audio/mpeg" if req.type == "audio" else "video/mp4"
+        cd_header = get_safe_content_disposition(filename, title)
 
         return FileResponse(
             path=filepath,
             filename=filename,
             media_type=media_type_header,
             headers={
-                "Content-Disposition": f'attachment; filename="{filename}"',
+                "Content-Disposition": cd_header,
                 "Access-Control-Expose-Headers": "Content-Disposition"
             }
         )

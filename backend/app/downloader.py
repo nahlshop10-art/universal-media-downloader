@@ -2,6 +2,7 @@ import os
 import tempfile
 import uuid
 import asyncio
+import re
 import yt_dlp
 from typing import Dict, Any, Optional, AsyncGenerator
 
@@ -10,10 +11,18 @@ class DownloaderError(Exception):
 
 DOWNLOAD_DIR = tempfile.gettempdir()
 
+def sanitize_filename(name: str) -> str:
+    """Sanitize title into an ASCII safe filename string."""
+    # Replace non-ASCII and special characters with underscore
+    clean = re.sub(r'[^\x20-\x7E]', '_', name)
+    clean = re.sub(r'[/\\?%*:|"<>|\uff5c]', '_', clean)
+    clean = re.sub(r'[\s_]+', '_', clean).strip('_')
+    return clean or "media"
+
 async def download_media(url: str, media_type: str = "video", format_id: Optional[str] = None) -> Dict[str, Any]:
     """Download media file and return filepath and filename."""
     file_id = str(uuid.uuid4())[:8]
-    out_tmpl = os.path.join(DOWNLOAD_DIR, f"download_{file_id}_%(title).50s.%(ext)s")
+    out_tmpl = os.path.join(DOWNLOAD_DIR, f"dl_{file_id}_%(id)s.%(ext)s")
 
     ydl_opts: Dict[str, Any] = {
         'outtmpl': out_tmpl,
@@ -43,16 +52,20 @@ async def download_media(url: str, media_type: str = "video", format_id: Optiona
     def _sync_download():
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=True)
-            filename = ydl.prepare_filename(info)
+            raw_path = ydl.prepare_filename(info)
             if media_type == "audio":
-                filename = os.path.splitext(filename)[0] + ".mp3"
-            return filename, info.get('title', 'downloaded_media')
+                raw_path = os.path.splitext(raw_path)[0] + ".mp3"
+            title = info.get('title', 'downloaded_media')
+            safe_title = sanitize_filename(title)
+            ext = "mp3" if media_type == "audio" else (info.get('ext') or "mp4")
+            download_filename = f"{safe_title}.{ext}"
+            return raw_path, download_filename, title
 
     try:
-        filepath, title = await asyncio.to_thread(_sync_download)
+        filepath, filename, title = await asyncio.to_thread(_sync_download)
         if not os.path.exists(filepath):
             # Scan directory for matching prefix
-            prefix = f"download_{file_id}_"
+            prefix = f"dl_{file_id}_"
             for f in os.listdir(DOWNLOAD_DIR):
                 if f.startswith(prefix):
                     filepath = os.path.join(DOWNLOAD_DIR, f)
@@ -63,7 +76,7 @@ async def download_media(url: str, media_type: str = "video", format_id: Optiona
 
         return {
             "filepath": filepath,
-            "filename": os.path.basename(filepath),
+            "filename": filename,
             "title": title
         }
     except Exception as e:
