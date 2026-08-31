@@ -22,7 +22,7 @@ import {
   Layers 
 } from 'lucide-react';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'https://universal-media-downloader-p9bz.onrender.com').replace(/\/$/, '');
 
 export default function Home() {
   const [mediaInfo, setMediaInfo] = useState<any>(null);
