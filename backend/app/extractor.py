@@ -63,15 +63,12 @@ def extract_media_info(url: str) -> Dict[str, Any]:
     if cached_info:
         info = cached_info
     else:
-        # Multi-client fallback chain:
-        # Tier 1: android_creator (bypasses cloud IP bot checks and extracts all 4K/1080p formats)
-        # Tier 2: android_music, android_vr
-        # Tier 3: Standard web / tv_embedded
+        # Multi-client fallback chain to solve bot-protection on datacenter IPs:
         client_chains = [
-            ['android_creator'],
-            ['android_music'],
-            ['android_vr'],
-            ['android', 'ios'],
+            ['android', 'ios', 'tv'],
+            ['android'],
+            ['ios'],
+            ['tv'],
             None
         ]
 
@@ -85,7 +82,7 @@ def extract_media_info(url: str) -> Dict[str, Any]:
                 'extract_flat': False,
                 'skip_download': True,
                 'socket_timeout': 15,
-                'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'js_runtimes': {'nodejs': {}},
             }
             if clients:
                 ydl_opts['extractor_args'] = {'youtube': {'player_client': clients}}
@@ -93,7 +90,7 @@ def extract_media_info(url: str) -> Dict[str, Any]:
             try:
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=False)
-                    if info:
+                    if info and info.get('title'):
                         set_cached_raw_info(url, info)
                         break
             except Exception as e:

@@ -63,10 +63,10 @@ async def download_media(url: str, media_type: str = "video", format_id: Optiona
 
     def _sync_download():
         client_chains = [
-            ['android_creator'],
-            ['android_music'],
-            ['android_vr'],
-            ['android', 'ios'],
+            ['android', 'ios', 'tv'],
+            ['android'],
+            ['ios'],
+            ['tv'],
             None
         ]
 
@@ -74,6 +74,7 @@ async def download_media(url: str, media_type: str = "video", format_id: Optiona
         last_err = None
         for clients in client_chains:
             current_opts = dict(ydl_opts)
+            current_opts['js_runtimes'] = {'nodejs': {}}
             if clients:
                 current_opts['extractor_args'] = {'youtube': {'player_client': clients}}
 
