@@ -1,3 +1,4 @@
+import os
 import re
 import time
 import yt_dlp
@@ -57,6 +58,21 @@ def format_filesize(size_bytes: Optional[int]) -> str:
         size_bytes /= 1024.0
     return f"{size_bytes:.1f} TB"
 
+def get_cookie_file() -> Optional[str]:
+    """Retrieve cookies file path from environment variable or local file."""
+    cookies_env = os.getenv("YOUTUBE_COOKIES")
+    if cookies_env:
+        try:
+            cookie_path = "/tmp/youtube_cookies.txt"
+            with open(cookie_path, "w", encoding="utf-8") as f:
+                f.write(cookies_env)
+            return cookie_path
+        except Exception:
+            pass
+    if os.path.exists("cookies.txt"):
+        return "cookies.txt"
+    return None
+
 def extract_media_info(url: str) -> Dict[str, Any]:
     """Extract metadata and available video/audio formats using yt-dlp with multi-client fallbacks."""
     cached_info = get_cached_raw_info(url)
@@ -74,6 +90,7 @@ def extract_media_info(url: str) -> Dict[str, Any]:
 
         info = None
         last_error = None
+        cookie_path = get_cookie_file()
 
         for clients in client_chains:
             ydl_opts: Dict[str, Any] = {
@@ -84,6 +101,8 @@ def extract_media_info(url: str) -> Dict[str, Any]:
                 'socket_timeout': 15,
                 'js_runtimes': {'nodejs': {}},
             }
+            if cookie_path:
+                ydl_opts['cookiefile'] = cookie_path
             if clients:
                 ydl_opts['extractor_args'] = {'youtube': {'player_client': clients}}
 

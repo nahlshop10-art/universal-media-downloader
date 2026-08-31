@@ -62,6 +62,8 @@ async def download_media(url: str, media_type: str = "video", format_id: Optiona
         ]
 
     def _sync_download():
+        from app.extractor import get_cookie_file
+        cookie_path = get_cookie_file()
         client_chains = [
             ['android', 'ios', 'tv'],
             ['android'],
@@ -75,6 +77,8 @@ async def download_media(url: str, media_type: str = "video", format_id: Optiona
         for clients in client_chains:
             current_opts = dict(ydl_opts)
             current_opts['js_runtimes'] = {'nodejs': {}}
+            if cookie_path:
+                current_opts['cookiefile'] = cookie_path
             if clients:
                 current_opts['extractor_args'] = {'youtube': {'player_client': clients}}
 
