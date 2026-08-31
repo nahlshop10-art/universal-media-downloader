@@ -65,11 +65,10 @@ async def download_media(url: str, media_type: str = "video", format_id: Optiona
         from app.extractor import get_cookie_file
         cookie_path = get_cookie_file()
         client_chains = [
-            ['android', 'ios', 'tv'],
-            ['android'],
-            ['ios'],
-            ['tv'],
-            None
+            None,
+            ['tv_embedded'],
+            ['android', 'ios'],
+            ['tv']
         ]
 
         info = None

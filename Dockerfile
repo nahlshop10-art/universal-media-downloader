@@ -1,11 +1,15 @@
 FROM python:3.11-slim
 
-# Install ffmpeg, curl, nodejs (JS runtime for yt-dlp challenge solving)
+# Install ffmpeg, curl, unzip and Deno (the official JS challenge runtime for yt-dlp)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     curl \
-    nodejs \
-    && rm -rf /var/lib/apt/lists/*
+    unzip \
+    && rm -rf /var/lib/apt/lists/* \
+    && curl -fsSL https://deno.land/install.sh | sh -s -- -y
+
+ENV DENO_INSTALL="/root/.deno"
+ENV PATH="$DENO_INSTALL/bin:$PATH"
 
 WORKDIR /app
 

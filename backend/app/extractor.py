@@ -79,13 +79,15 @@ def extract_media_info(url: str) -> Dict[str, Any]:
     if cached_info:
         info = cached_info
     else:
-        # Multi-client fallback chain to solve bot-protection on datacenter IPs:
+        # Multi-client fallback chain:
+        # 1. Standard web client (extracts all 4K, 2K, 1080p, 720p resolutions using Deno JS solver)
+        # 2. tv_embedded client (bypasses bot challenges)
+        # 3. mobile android/ios client fallback
         client_chains = [
-            ['android', 'ios', 'tv'],
-            ['android'],
-            ['ios'],
-            ['tv'],
-            None
+            None,
+            ['tv_embedded'],
+            ['android', 'ios'],
+            ['tv']
         ]
 
         info = None
