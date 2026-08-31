@@ -36,7 +36,13 @@ class DownloadRequest(BaseModel):
     format_id: Optional[str] = None
     ext: Optional[str] = "mp4"
 
+@app.get("/")
+@app.head("/")
+async def root_index():
+    return {"status": "ok", "service": "media-downloader", "message": "Universal Media Downloader API running 24/7"}
+
 @app.get("/api/health")
+@app.head("/api/health")
 async def health_check():
     return {"status": "ok", "service": "media-downloader"}
 
