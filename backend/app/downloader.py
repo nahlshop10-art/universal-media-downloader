@@ -63,10 +63,11 @@ async def download_media(url: str, media_type: str = "video", format_id: Optiona
 
     def _sync_download():
         client_chains = [
-            None,
+            ['android_creator'],
+            ['android_music'],
+            ['android_vr'],
             ['android', 'ios'],
-            ['ios', 'web_safari'],
-            ['tv_embedded', 'android']
+            None
         ]
 
         info = None

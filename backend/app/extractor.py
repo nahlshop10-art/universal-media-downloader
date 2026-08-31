@@ -64,14 +64,15 @@ def extract_media_info(url: str) -> Dict[str, Any]:
         info = cached_info
     else:
         # Multi-client fallback chain:
-        # Tier 1: Standard client (extracts all 4K, 2K, 1080p, 720p resolutions)
-        # Tier 2: Mobile clients (android, ios - seamlessly bypasses bot checks if cloud IP is flagged)
-        # Tier 3: tv_embedded / safari clients
+        # Tier 1: android_creator (bypasses cloud IP bot checks and extracts all 4K/1080p formats)
+        # Tier 2: android_music, android_vr
+        # Tier 3: Standard web / tv_embedded
         client_chains = [
-            None,
+            ['android_creator'],
+            ['android_music'],
+            ['android_vr'],
             ['android', 'ios'],
-            ['ios', 'web_safari'],
-            ['tv_embedded', 'android']
+            None
         ]
 
         info = None
