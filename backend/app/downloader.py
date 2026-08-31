@@ -62,16 +62,40 @@ async def download_media(url: str, media_type: str = "video", format_id: Optiona
         ]
 
     def _sync_download():
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            raw_path = ydl.prepare_filename(info)
-            if media_type == "audio":
-                raw_path = os.path.splitext(raw_path)[0] + ".mp3"
-            title = info.get('title', 'downloaded_media')
-            safe_title = sanitize_filename(title)
-            ext = "mp3" if media_type == "audio" else (info.get('ext') or "mp4")
-            download_filename = f"{safe_title}.{ext}"
-            return raw_path, download_filename, title
+        client_chains = [
+            None,
+            ['android', 'ios'],
+            ['ios', 'web_safari'],
+            ['tv_embedded', 'android']
+        ]
+
+        info = None
+        last_err = None
+        for clients in client_chains:
+            current_opts = dict(ydl_opts)
+            if clients:
+                current_opts['extractor_args'] = {'youtube': {'player_client': clients}}
+
+            try:
+                with yt_dlp.YoutubeDL(current_opts) as ydl:
+                    info = ydl.extract_info(url, download=True)
+                    if info:
+                        break
+            except Exception as e:
+                last_err = e
+                continue
+
+        if not info:
+            raise DownloaderError(f"Download failed: {str(last_err)}")
+
+        raw_path = yt_dlp.YoutubeDL(ydl_opts).prepare_filename(info)
+        if media_type == "audio":
+            raw_path = os.path.splitext(raw_path)[0] + ".mp3"
+        title = info.get('title', 'downloaded_media')
+        safe_title = sanitize_filename(title)
+        ext = "mp3" if media_type == "audio" else (info.get('ext') or "mp4")
+        download_filename = f"{safe_title}.{ext}"
+        return raw_path, download_filename, title
 
     try:
         filepath, filename, title = await asyncio.to_thread(_sync_download)
