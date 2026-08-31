@@ -1,22 +1,13 @@
-import gradio as gr
-from backend.app.main import app as fastapi_app
+import sys
+import os
+import uvicorn
 
-# Minimal Gradio dashboard mounted alongside FastAPI
-def check_status(url: str):
-    return f"API is active! Endpoint available for: {url}"
+# Add backend directory to sys.path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "backend"))
 
-demo = gr.Interface(
-    fn=check_status,
-    inputs=gr.Textbox(label="Media URL", placeholder="https://www.youtube.com/watch?v=..."),
-    outputs=gr.Textbox(label="Backend Status"),
-    title="Universal Media Downloader Cloud API",
-    description="FastAPI 24/7 backend engine. Connects to https://universal-media-downloader.pages.dev."
-)
-
-app = gr.mount_gradio_app(fastapi_app, demo, path="/gradio")
+from backend.app.main import app
 
 if __name__ == "__main__":
-    import uvicorn
-    import os
     port = int(os.environ.get("PORT", 7860))
     uvicorn.run(app, host="0.0.0.0", port=port)
