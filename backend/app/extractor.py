@@ -65,10 +65,10 @@ def extract_media_info(url: str) -> Dict[str, Any]:
     else:
         # Multi-client fallback chain to bypass cloud IP / bot restrictions
         client_chains = [
-            None,  # default / standard extraction
-            ['android', 'ios'],
+            ['android', 'ios', 'mweb'],
             ['ios', 'web_safari'],
-            ['tv_embedded', 'android']
+            ['tv_embedded', 'android'],
+            None  # default / standard extraction fallback
         ]
 
         info = None
