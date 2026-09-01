@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AliExpress - Smart Shopping, Better Living</title>
+<style>
+/* ponytail: native CSS variables and grid, zero CSS frameworks */
+:root {
+  --primary: #ff4747;
+  --primary-dark: #e02b2b;
+  --bg: #f2f2f2;
+  --card-bg: #ffffff;
+  --text: #191919;
+  --muted: #757575;
+  --border: #e5e5e5;
+  --gold: #ff9900;
+  --radius: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+body { background: var(--bg); color: var(--text); padding-bottom: 60px; }
+
+/* Top Promo Bar */
+.top-bar { background: #111; color: #fff; text-align: center; font-size: 12px; padding: 6px; font-weight: 600; }
+.top-bar span { color: #ffeb3b; }
+
+/* Header */
+header { background: #fff; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.nav-container { max-width: 1200px; margin: auto; padding: 12px 16px; display: flex; align-items: center; gap: 20px; }
+.logo { font-size: 26px; font-weight: 900; color: var(--primary); text-decoration: none; letter-spacing: -1px; }
+.logo span { color: #111; font-weight: 300; }
+
+/* Search Bar */
+.search-box { flex: 1; display: flex; border: 2px solid var(--primary); border-radius: 24px; overflow: hidden; background: #fff; }
+.search-box input { flex: 1; border: none; padding: 10px 16px; font-size: 14px; outline: none; }
+.search-box button { background: var(--primary); color: #fff; border: none; padding: 0 24px; font-weight: 600; cursor: pointer; }
+
+/* Nav Actions */
+.nav-actions { display: flex; align-items: center; gap: 16px; font-size: 13px; font-weight: 600; }
+.cart-btn { background: none; border: none; font-size: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; position: relative; }
+.cart-badge { background: var(--primary); color: #fff; border-radius: 10px; padding: 2px 6px; font-size: 11px; }
+
+/* Categories Bar */
+.categories-bar { background: #fff; border-top: 1px solid var(--border); }
+.cat-container { max-width: 1200px; margin: auto; padding: 8px 16px; display: flex; gap: 12px; overflow-x: auto; white-space: nowrap; }
+.cat-pill { padding: 6px 14px; border-radius: 16px; background: #f5f5f5; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none; color: var(--text); border: 1px solid transparent; }
+.cat-pill.active, .cat-pill:hover { background: #fff1f1; color: var(--primary); border-color: var(--primary); }
+
+/* Main Container */
+main { max-width: 1200px; margin: 16px auto; padding: 0 16px; }
+
+/* Hero / Flash Deals Banner */
+.flash-banner { background: linear-gradient(135deg, #ff4747 0%, #ff8a00 100%); color: #fff; border-radius: var(--radius); padding: 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+.flash-title { font-size: 22px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+.timer-box { font-size: 14px; font-weight: 700; background: rgba(0,0,0,0.25); padding: 6px 12px; border-radius: 6px; }
+
+/* Product Grid */
+.product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+.card { background: var(--card-bg); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.15s ease, box-shadow 0.15s ease; border: 1px solid #f0f0f0; }
+.card:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,0.1); }
+.card-img-wrap { position: relative; width: 100%; aspect-ratio: 1; background: #fafafa; overflow: hidden; }
+.card img { width: 100%; height: 100%; object-fit: cover; }
+.discount-tag { position: absolute; top: 8px; left: 8px; background: var(--primary); color: #fff; font-size: 11px; font-weight: 800; padding: 2px 6px; border-radius: 4px; }
+.card-body { padding: 12px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+.card-title { font-size: 13px; line-height: 1.4; height: 36px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin-bottom: 8px; font-weight: 500; }
+.price-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 6px; }
+.currency { font-size: 13px; font-weight: 700; color: var(--primary); }
+.price { font-size: 20px; font-weight: 900; color: var(--primary); }
+.old-price { font-size: 12px; color: var(--muted); text-decoration: line-through; }
+.meta-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+.rating { color: var(--gold); font-weight: 700; }
+.badge-free-shipping { background: #e8f5e9; color: #2e7d32; font-size: 10px; font-weight: 700; padding: 2px 5px; border-radius: 3px; display: inline-block; width: fit-content; margin-bottom: 8px; }
+.buy-btn { width: 100%; background: var(--primary); color: #fff; border: none; padding: 8px; border-radius: 20px; font-weight: 700; font-size: 13px; cursor: pointer; transition: background 0.1s; }
+.buy-btn:hover { background: var(--primary-dark); }
+
+/* Native Modal Dialog for Cart */
+dialog { margin: auto; border: none; border-radius: 12px; padding: 24px; max-width: 440px; width: 90%; box-shadow: 0 10px 30px rgba(0,0,0,0.3); outline: none; }
+dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-size: 18px; font-weight: 800; }
+.close-modal { background: none; border: none; font-size: 22px; cursor: pointer; }
+.cart-items { max-height: 260px; overflow-y: auto; margin-bottom: 16px; }
+.cart-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.checkout-btn { width: 100%; background: var(--primary); color: #fff; border: none; padding: 12px; border-radius: 24px; font-weight: 800; font-size: 15px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">⚡ SUPER DEALS: Up to <span>70% OFF</span> + Free Shipping on orders over $10!</div>
+
+<header>
+  <div class="nav-container">
+    <a href="#" class="logo">Ali<span>Express</span></a>
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Search wireless earbuds, smart watch, jackets...">
+      <button onclick="filterProducts()">Search</button>
+    </div>
+    <div class="nav-actions">
+      <button class="cart-btn" onclick="openCart()">
+        🛒 Cart <span class="cart-badge" id="cartCount">0</span>
+      </button>
+    </div>
+  </div>
+  <nav class="categories-bar">
+    <div class="cat-container" id="catBar"></div>
+  </nav>
+</header>
+
+<main>
+  <section class="flash-banner">
+    <div class="flash-title">🔥 SuperDeals &middot; Limited Quantity</div>
+    <div class="timer-box" id="flashTimer">Ends in: 04h 32m 18s</div>
+  </section>
+
+  <section class="product-grid" id="productGrid"></section>
+</main>
+
+<!-- Native HTML5 Dialog for Cart (ponytail: zero modal libraries) -->
+<dialog id="cartDialog">
+  <div class="modal-header">
+    <span>Shopping Cart (<span id="modalCartCount">0</span>)</span>
+    <button class="close-modal" onclick="cartDialog.close()">&times;</button>
+  </div>
+  <div class="cart-items" id="cartList"></div>
+  <div style="display:flex; justify-content:space-between; margin-bottom:16px; font-weight:800; font-size:16px;">
+    <span>Total:</span>
+    <span id="cartTotal" style="color:var(--primary);">$0.00</span>
+  </div>
+  <button class="checkout-btn" onclick="alert('Order placed successfully! Total: ' + document.getElementById('cartTotal').textContent)">Checkout Now</button>
+</dialog>
+
+<script>
+// ponytail: clean array-driven catalog + native DOM operations
+const PRODUCTS = [
+  { id: 1, title: "Lenovo Thinkplus LP40 Pro Wireless Bluetooth Earphones", cat: "Electronics", price: 8.49, oldPrice: 24.99, discount: "-66%", rating: 4.8, sold: "50,000+", img: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400&q=80" },
+  { id: 2, title: "AMOLED Ultra Smart Watch with Bluetooth Calling & Heart Rate", cat: "Electronics", price: 19.99, oldPrice: 49.99, discount: "-60%", rating: 4.7, sold: "12,400+", img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80" },
+  { id: 3, title: "RGB Mechanical Gaming Keyboard with Hot-Swappable Switches", cat: "Computers", price: 29.50, oldPrice: 65.00, discount: "-54%", rating: 4.9, sold: "8,900+", img: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=400&q=80" },
+  { id: 4, title: "Vintage Oversized Men's Heavyweight Cotton T-Shirt", cat: "Fashion", price: 7.20, oldPrice: 16.00, discount: "-55%", rating: 4.6, sold: "34,000+", img: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=400&q=80" },
+  { id: 5, title: "Fast GaN 65W USB-C Charger for iPhone, Samsung & MacBook", cat: "Phones", price: 11.89, oldPrice: 28.00, discount: "-57%", rating: 4.9, sold: "90,000+", img: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=400&q=80" },
+  { id: 6, title: "Ergonomic Memory Foam Lumbar Support Seat Cushion", cat: "Home", price: 14.30, oldPrice: 32.50, discount: "-56%", rating: 4.7, sold: "6,200+", img: "https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?w=400&q=80" },
+  { id: 7, title: "Precision Magnetic Screwdriver Set 128-in-1 Repair Kit", cat: "Tools", price: 13.99, oldPrice: 35.00, discount: "-60%", rating: 4.8, sold: "18,000+", img: "https://images.unsplash.com/photo-1581147036324-c17ac41dfa6c?w=400&q=80" },
+  { id: 8, title: "4K Drone with Dual HD Camera & Obstacle Avoidance", cat: "Toys", price: 34.90, oldPrice: 89.00, discount: "-61%", rating: 4.5, sold: "4,100+", img: "https://images.unsplash.com/photo-1508614589041-895b88991e3e?w=400&q=80" }
+];
+
+const categories = ["All", ...new Set(PRODUCTS.map(p => p.cat))];
+let activeCategory = "All";
+let cart = [];
+
+function renderCategories() {
+  document.getElementById("catBar").innerHTML = categories.map(c =>
+    `<button class="cat-pill ${c === activeCategory ? 'active' : ''}" onclick="setCategory('${c}')">${c}</button>`
+  ).join("");
+}
+
+function renderProducts(items) {
+  document.getElementById("productGrid").innerHTML = items.map(p => `
+    <article class="card">
+      <div class="card-img-wrap">
+        <img src="${p.img}" alt="${p.title}" loading="lazy">
+        <span class="discount-tag">${p.discount}</span>
+      </div>
+      <div class="card-body">
+        <h3 class="card-title">${p.title}</h3>
+        <div>
+          <div class="price-row">
+            <span class="currency">$</span>
+            <span class="price">${p.price.toFixed(2)}</span>
+            <span class="old-price">$${p.oldPrice.toFixed(2)}</span>
+          </div>
+          <span class="badge-free-shipping">Free shipping</span>
+          <div class="meta-row">
+            <span class="rating">★ ${p.rating}</span>
+            <span>${p.sold} sold</span>
+          </div>
+        </div>
+        <button class="buy-btn" onclick="addToCart(${p.id})">Add to Cart</button>
+      </div>
+    </article>
+  `).join("");
+}
+
+function setCategory(cat) {
+  activeCategory = cat;
+  renderCategories();
+  filterProducts();
+}
+
+function filterProducts() {
+  const query = document.getElementById("searchInput").value.toLowerCase();
+  const filtered = PRODUCTS.filter(p => 
+    (activeCategory === "All" || p.cat === activeCategory) &&
+    (p.title.toLowerCase().includes(query) || p.cat.toLowerCase().includes(query))
+  );
+  renderProducts(filtered);
+}
+
+function addToCart(id) {
+  const item = PRODUCTS.find(p => p.id === id);
+  cart.push(item);
+  document.getElementById("cartCount").textContent = cart.length;
+}
+
+function openCart() {
+  const modal = document.getElementById("cartDialog");
+  document.getElementById("modalCartCount").textContent = cart.length;
+  const list = document.getElementById("cartList");
+  if (cart.length === 0) {
+    list.innerHTML = `<p style="color:var(--muted); text-align:center; padding:20px;">Your cart is empty.</p>`;
+    document.getElementById("cartTotal").textContent = "$0.00";
+  } else {
+    list.innerHTML = cart.map((item, idx) => `
+      <div class="cart-row">
+        <span>${item.title.substring(0, 24)}...</span>
+        <strong>$${item.price.toFixed(2)}</strong>
+      </div>
+    `).join("");
+    const total = cart.reduce((sum, item) => sum + item.price, 0);
+    document.getElementById("cartTotal").textContent = "$" + total.toFixed(2);
+  }
+  modal.showModal();
+}
+
+// ponytail: naive 1-second interval countdown for promo header
+setInterval(() => {
+  const d = new Date();
+  const h = String(23 - d.getHours()).padStart(2, '0');
+  const m = String(59 - d.getMinutes()).padStart(2, '0');
+  const s = String(59 - d.getSeconds()).padStart(2, '0');
+  document.getElementById("flashTimer").textContent = `Ends in: ${h}h ${m}m ${s}s`;
+}, 1000);
+
+document.getElementById("searchInput").addEventListener("input", filterProducts);
+
+renderCategories();
+renderProducts(PRODUCTS);
+</script>
+</body>
+</html>

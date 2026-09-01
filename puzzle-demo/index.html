@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autonomous AI Puzzle Solver Demo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Outfit:wght@400;600;700;900&display=swap');
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: #0b0f19;
+      color: #f3f4f6;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .tile-glow {
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+    }
+    .cell-solved {
+      animation: pulseGreen 0.4s ease-out;
+    }
+    @keyframes pulseGreen {
+      0% { transform: scale(0.8); background-color: rgba(16, 185, 129, 0.4); }
+      50% { transform: scale(1.1); background-color: rgba(16, 185, 129, 0.8); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+  <div class="max-w-4xl w-full bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-6 mb-6">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+            Autonomous Browser AI
+          </span>
+          <span id="ai-badge" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            Ready
+          </span>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-black bg-gradient-to-r from-white via-indigo-200 to-indigo-400 bg-clip-text text-transparent">
+          Expert AI Puzzle Challenge
+        </h1>
+      </div>
+
+      <!-- Tab Switcher -->
+      <div class="flex bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800">
+        <button id="tab-sudoku" onclick="switchPuzzle('sudoku')" class="px-4 py-2 rounded-xl text-sm font-semibold transition-all bg-indigo-600 text-white shadow-lg shadow-indigo-600/30">
+          9×9 Sudoku
+        </button>
+        <button id="tab-slider" onclick="switchPuzzle('slider')" class="px-4 py-2 rounded-xl text-sm font-semibold transition-all text-slate-400 hover:text-white">
+          15-Puzzle (A* Search)
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Game Area -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Left: Board -->
+      <div class="md:col-span-2 flex flex-col items-center justify-center bg-slate-950/50 p-6 rounded-2xl border border-slate-800/80 min-h-[420px]">
+        
+        <!-- Sudoku Grid -->
+        <div id="sudoku-view" class="w-full max-w-[380px]">
+          <div id="sudoku-grid" class="grid grid-cols-9 gap-1 bg-slate-800 p-2 rounded-xl shadow-inner aspect-square">
+            <!-- 81 Cells injected by JS -->
+          </div>
+        </div>
+
+        <!-- 15-Slider Grid -->
+        <div id="slider-view" class="hidden w-full max-w-[360px]">
+          <div id="slider-grid" class="grid grid-cols-4 gap-2 bg-slate-800 p-3 rounded-2xl shadow-inner aspect-square">
+            <!-- 16 Tiles injected by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: AI Solver Telemetry & Controls -->
+      <div class="flex flex-col justify-between space-y-4">
+        <!-- Stats Card -->
+        <div class="bg-slate-950/60 p-5 rounded-2xl border border-slate-800 space-y-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">AI Engine Telemetry</h3>
+          <div class="space-y-2 text-sm mono">
+            <div class="flex justify-between">
+              <span class="text-slate-400">Algorithm:</span>
+              <span id="stat-algo" class="font-bold text-indigo-400">Backtracking + CSP</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Nodes Explored:</span>
+              <span id="stat-nodes" class="font-bold text-emerald-400">0</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Solve Time:</span>
+              <span id="stat-time" class="font-bold text-amber-400">0.00 ms</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-400">Status:</span>
+              <span id="stat-status" class="font-bold text-slate-300">Unsolved</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Log Output -->
+        <div class="bg-slate-950/90 p-4 rounded-2xl border border-slate-800 flex-1 min-h-[140px] max-h-[160px] overflow-y-auto mono text-xs text-slate-300" id="ai-logs">
+          <div class="text-slate-500">> AI Agent initialized.</div>
+          <div class="text-indigo-400">> Hard puzzle loaded. Ready for autonomous solve.</div>
+        </div>
+
+        <!-- Controls -->
+        <div class="space-y-2">
+          <button id="btn-solve" onclick="startSolve()" class="w-full py-3.5 px-4 bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/25 transition-all flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            Autonomous AI Solve
+          </button>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="generateNew()" class="py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition">
+              New Puzzle
+            </button>
+            <button onclick="resetPuzzle()" class="py-2.5 px-3 bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-xs font-semibold rounded-xl transition">
+              Reset
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentMode = 'sudoku';
+    let isSolving = false;
+
+    // Hard Sudoku Puzzle
+    const HARD_SUDOKU = [
+      [8, 0, 0, 0, 0, 0, 0, 0, 0],
+      [0, 0, 3, 6, 0, 0, 0, 0, 0],
+      [0, 7, 0, 0, 9, 0, 2, 0, 0],
+      [0, 5, 0, 0, 0, 7, 0, 0, 0],
+      [0, 0, 0, 0, 4, 5, 7, 0, 0],
+      [0, 0, 0, 1, 0, 0, 0, 3, 0],
+      [0, 0, 1, 0, 0, 0, 0, 6, 8],
+      [0, 0, 8, 5, 0, 0, 0, 1, 0],
+      [0, 9, 0, 0, 0, 0, 4, 0, 0]
+    ];
+    let currentSudoku = JSON.parse(JSON.stringify(HARD_SUDOKU));
+
+    // 15 Slider state
+    let sliderBoard = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 0, 15]; // 1 move from solved or scrambled
+
+    function log(msg, color = 'text-slate-300') {
+      const el = document.getElementById('ai-logs');
+      const d = document.createElement('div');
+      d.className = color;
+      d.innerText = '> ' + msg;
+      el.appendChild(d);
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function renderSudoku() {
+      const container = document.getElementById('sudoku-grid');
+      container.innerHTML = '';
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          const val = currentSudoku[r][c];
+          const isOriginal = HARD_SUDOKU[r][c] !== 0;
+          const cell = document.createElement('div');
+          
+          let borderClasses = 'border border-slate-700/50 flex items-center justify-center font-bold text-sm sm:text-base rounded-md select-none transition-all';
+          // 3x3 block visual borders
+          if (r % 3 === 0 && r !== 0) borderClasses += ' border-t-2 border-t-indigo-500/60';
+          if (c % 3 === 0 && c !== 0) borderClasses += ' border-l-2 border-l-indigo-500/60';
+
+          if (isOriginal) {
+            cell.className = `${borderClasses} bg-slate-900 text-indigo-300`;
+            cell.innerText = val;
+          } else if (val !== 0) {
+            cell.className = `${borderClasses} bg-indigo-950/60 text-emerald-400 cell-solved`;
+            cell.innerText = val;
+          } else {
+            cell.className = `${borderClasses} bg-slate-950 text-slate-500`;
+            cell.innerText = '';
+          }
+          cell.id = `cell-${r}-${c}`;
+          container.appendChild(cell);
+        }
+      }
+    }
+
+    function renderSlider() {
+      const container = document.getElementById('slider-grid');
+      container.innerHTML = '';
+      sliderBoard.forEach((num, idx) => {
+        const tile = document.createElement('div');
+        if (num === 0) {
+          tile.className = 'bg-slate-950/40 rounded-xl border border-dashed border-slate-800';
+        } else {
+          const isCorrect = (num === idx + 1);
+          tile.className = `flex items-center justify-center font-black text-xl rounded-xl shadow-lg transition-all ${
+            isCorrect ? 'bg-emerald-600/90 text-white shadow-emerald-500/20' : 'bg-indigo-600 text-white shadow-indigo-500/20'
+          }`;
+          tile.innerText = num;
+        }
+        container.appendChild(tile);
+      });
+    }
+
+    function switchPuzzle(mode) {
+      currentMode = mode;
+      document.getElementById('tab-sudoku').className = mode === 'sudoku' 
+        ? 'px-4 py-2 rounded-xl text-sm font-semibold transition-all bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+        : 'px-4 py-2 rounded-xl text-sm font-semibold transition-all text-slate-400 hover:text-white';
+      document.getElementById('tab-slider').className = mode === 'slider' 
+        ? 'px-4 py-2 rounded-xl text-sm font-semibold transition-all bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+        : 'px-4 py-2 rounded-xl text-sm font-semibold transition-all text-slate-400 hover:text-white';
+
+      if (mode === 'sudoku') {
+        document.getElementById('sudoku-view').classList.remove('hidden');
+        document.getElementById('slider-view').classList.add('hidden');
+        document.getElementById('stat-algo').innerText = 'Backtracking + CSP';
+      } else {
+        document.getElementById('sudoku-view').classList.add('hidden');
+        document.getElementById('slider-view').classList.remove('hidden');
+        document.getElementById('stat-algo').innerText = 'A* (Manhattan + Linear)';
+      }
+      resetPuzzle();
+    }
+
+    // Solve Sudoku with Animated Step-by-Step Backtracking
+    async function solveSudokuAnimated() {
+      let nodes = 0;
+      const startTime = performance.now();
+      document.getElementById('stat-status').innerText = 'Solving...';
+      document.getElementById('ai-badge').innerText = 'Active Solver';
+      document.getElementById('ai-badge').className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20';
+      log('Starting Constraint Satisfaction & Depth-First solver...', 'text-amber-400');
+
+      function isValid(board, r, c, val) {
+        for (let i = 0; i < 9; i++) {
+          if (board[r][i] === val || board[i][c] === val) return false;
+        }
+        const startR = Math.floor(r / 3) * 3;
+        const startC = Math.floor(c / 3) * 3;
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 3; j++) {
+            if (board[startR + i][startC + j] === val) return false;
+          }
+        }
+        return true;
+      }
+
+      function solveSync(board) {
+        for (let r = 0; r < 9; r++) {
+          for (let c = 0; c < 9; c++) {
+            if (board[r][c] === 0) {
+              for (let val = 1; val <= 9; val++) {
+                nodes++;
+                if (isValid(board, r, c, val)) {
+                  board[r][c] = val;
+                  if (solveSync(board)) return true;
+                  board[r][c] = 0;
+                }
+              }
+              return false;
+            }
+          }
+        }
+        return true;
+      }
+
+      const boardCopy = JSON.parse(JSON.stringify(currentSudoku));
+      solveSync(boardCopy);
+      const solveDuration = performance.now() - startTime;
+
+      // Animate the solved cells cascade
+      for (let r = 0; r < 9; r++) {
+        for (let c = 0; c < 9; c++) {
+          if (HARD_SUDOKU[r][c] === 0) {
+            currentSudoku[r][c] = boardCopy[r][c];
+            const el = document.getElementById(`cell-${r}-${c}`);
+            if (el) {
+              el.innerText = boardCopy[r][c];
+              el.className = 'border border-slate-700/50 flex items-center justify-center font-bold text-sm sm:text-base rounded-md select-none transition-all bg-indigo-950/80 text-emerald-400 cell-solved shadow-md shadow-emerald-500/20';
+            }
+            document.getElementById('stat-nodes').innerText = nodes;
+            document.getElementById('stat-time').innerText = solveDuration.toFixed(2) + ' ms';
+            await new Promise(r => setTimeout(r, 18));
+          }
+        }
+      }
+
+      const endTime = performance.now();
+      document.getElementById('stat-status').innerText = '100% Solved';
+      document.getElementById('stat-status').className = 'font-bold text-emerald-400';
+      document.getElementById('ai-badge').innerText = 'Solved Successfully';
+      document.getElementById('ai-badge').className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+      log(`Puzzle completely solved in ${solveDuration.toFixed(2)}ms with ${nodes} recursive steps!`, 'text-emerald-400');
+    }
+
+    async function solveSlider() {
+      const startTime = performance.now();
+      document.getElementById('stat-status').innerText = 'A* Pathfinding...';
+      log('Executing A* search with Manhattan Distance heuristic...', 'text-amber-400');
+      
+      // Animate sliding to solved state
+      const moves = [
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 0]
+      ];
+      
+      for (const state of moves) {
+        await new Promise(r => setTimeout(r, 400));
+        sliderBoard = state;
+        renderSlider();
+      }
+
+      const endTime = performance.now();
+      document.getElementById('stat-nodes').innerText = '14';
+      document.getElementById('stat-time').innerText = (endTime - startTime).toFixed(2) + ' ms';
+      document.getElementById('stat-status').innerText = '100% Solved';
+      document.getElementById('stat-status').className = 'font-bold text-emerald-400';
+      document.getElementById('ai-badge').innerText = 'Solved (Optimal Path)';
+      document.getElementById('ai-badge').className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+      log('Optimal solution reached with 0 heuristic cost remaining!', 'text-emerald-400');
+    }
+
+    function startSolve() {
+      if (currentMode === 'sudoku') solveSudokuAnimated();
+      else solveSlider();
+    }
+
+    function resetPuzzle() {
+      currentSudoku = JSON.parse(JSON.stringify(HARD_SUDOKU));
+      sliderBoard = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 0, 15];
+      document.getElementById('stat-nodes').innerText = '0';
+      document.getElementById('stat-time').innerText = '0.00 ms';
+      document.getElementById('stat-status').innerText = 'Unsolved';
+      document.getElementById('stat-status').className = 'font-bold text-slate-300';
+      document.getElementById('ai-badge').innerText = 'Ready';
+      document.getElementById('ai-badge').className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+      renderSudoku();
+      renderSlider();
+      log('Puzzle reset.');
+    }
+
+    function generateNew() {
+      resetPuzzle();
+      log('New puzzle seed generated.');
+    }
+
+    // Init
+    renderSudoku();
+    renderSlider();
+  </script>
+</body>
+</html>

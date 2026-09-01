@@ -38,8 +38,20 @@ class DownloadRequest(BaseModel):
 
 @app.get("/")
 @app.head("/")
-async def root_index():
-    return {"status": "ok", "service": "media-downloader", "message": "Universal Media Downloader API running 24/7"}
+def read_root():
+    return {"status": "ok", "service": "Universal Social Media Downloader API", "version": "1.0.0"}
+
+@app.get("/aliexpress", response_class=HTMLResponse)
+def get_aliexpress_demo():
+    clone_path = os.path.join(os.path.dirname(__file__), "..", "..", "aliexpress-clone", "index.html")
+    if os.path.exists(clone_path):
+        with open(clone_path, "r", encoding="utf-8") as f:
+            return f.read()
+    alt_path = os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "aliexpress.html")
+    if os.path.exists(alt_path):
+        with open(alt_path, "r", encoding="utf-8") as f:
+            return f.read()
+    return "<h1>AliExpress Clone Demo</h1>"
 
 @app.get("/api/health")
 @app.head("/api/health")
